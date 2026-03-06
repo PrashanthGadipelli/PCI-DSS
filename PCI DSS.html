@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCI DSS — Top 5 Failures & v4.0.1 Requirements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1a202c;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        .chart-container {
+            position: relative;
+            height: 320px;
+            padding: 1rem;
+        }
+        /* Requirements table */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th {
+            background-color: #f9fafb;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: top;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover td {
+            background-color: #f9fafb;
+        }
+        .tag {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-10">
+<div class="container mx-auto">
+
+    <!-- Header -->
+    <header class="mb-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-800">PCI DSS Threat Report</h1>
+        <p class="text-lg md:text-xl text-gray-600 mt-2">Top 5 Failures &amp; v4.0.1 Requirements · 2025</p>
+    </header>
+
+    <!-- Executive Summary -->
+    <div class="card p-6 mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Executive Summary</h2>
+        <p class="text-gray-700 leading-relaxed mb-3">
+            The Payment Card Industry Data Security Standard (<strong>PCI DSS v4.0.1</strong>) is the global
+            baseline for securing cardholder data and is mandatory for every organization that stores, processes,
+            or transmits payment card information from retail and hospitality to healthcare and fintech. As of
+            <strong>March 31, 2025</strong>, all 64 new requirements introduced in v4.0 are fully in force and
+            enforceable by qualified security assessors.
+        </p>
+        <p class="text-gray-700 leading-relaxed">
+            Despite this, <strong>only 27.9% of organizations are fully compliant</strong> at the time of
+            assessment, according to the Verizon Payment Security Report. Forensic investigations consistently
+            show that every payment card breach involved a control explicitly covered by PCI DSS meaning
+            attackers are exploiting known, unaddressed gaps rather than novel techniques. Monthly fines for
+            non-compliance range from <strong>$5,000 to $100,000</strong>, and the average cost of a
+            payment data breach reached <strong>$4.88 million</strong> in 2024.
+        </p>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="card p-6 flex flex-col items-center justify-center text-center">
+            <div class="text-red-500 text-5xl font-bold">72.1%</div>
+            <div class="text-gray-600 font-medium mt-2">Organizations Non-Compliant</div>
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center text-center">
+            <div class="text-yellow-500 text-5xl font-bold">$4.88M</div>
+            <div class="text-gray-600 font-medium mt-2">Avg Breach Cost (2024)</div>
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center text-center">
+            <div class="text-blue-500 text-5xl font-bold">64</div>
+            <div class="text-gray-600 font-medium mt-2">New v4.0 Requirements</div>
+        </div>
+        <div class="card p-6 flex flex-col items-center justify-center text-center">
+            <div class="text-green-500 text-5xl font-bold">$100K</div>
+            <div class="text-gray-600 font-medium mt-2">Max Monthly Fine</div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="card">
+            <h3 class="text-xl font-bold text-gray-800 p-6 pb-2">% of Breached Orgs per Failure</h3>
+            <div class="chart-container">
+                <canvas id="failureChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3 class="text-xl font-bold text-gray-800 p-6 pb-2">Industries Most Failing PCI DSS</h3>
+            <div class="chart-container">
+                <canvas id="industryChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3 class="text-xl font-bold text-gray-800 p-6 pb-2">Global Compliance Rate Over Time</h3>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 5 Failures -->
+    <div class="card p-6 mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Top 5 Most Common PCI DSS Failures</h2>
+        <p class="text-gray-600 mb-6 text-sm leading-relaxed">
+            Based on Verizon forensic investigations, SISA, Hyperproof, and SecurityMetrics assessments.
+            These five gaps appear most frequently across breached organizations globally.
+        </p>
+
+        <div class="space-y-4">
+
+            <!-- Failure 1 -->
+            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                <div class="flex items-start justify-between gap-4 mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-red-500 text-2xl font-bold">#1</span>
+                        <h3 class="text-lg font-bold text-gray-800">Weak or Missing Access Controls &amp; Authentication</h3>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-red-500 text-2xl font-bold">68%</div>
+                        <div class="text-xs text-gray-500">of breached orgs</div>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 mb-2 font-medium">PCI DSS Req 7 &amp; 8 : Identity &amp; Access Management</div>
+                <p class="text-gray-700 text-sm leading-relaxed mb-2">
+                    Inadequate authentication missing MFA, shared accounts, weak passwords, unchanged default
+                    credentials is the single most exploited gap. PCI DSS v4.0 now mandates MFA for
+                    <em>all</em> access into the CDE (Req 8.4.2) and a minimum 12-character password (Req 8.3.6).
+                </p>
+                <p class="text-sm text-gray-500">
+                    <strong>Notable breaches:</strong> Target (41M cards, $18.5M settlement) · Heartland Payment Systems
+                    (130M cards) · British Airways (500K customers, $229M fine)
+                </p>
+            </div>
+
+            <!-- Failure 2 -->
+            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                <div class="flex items-start justify-between gap-4 mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-yellow-500 text-2xl font-bold">#2</span>
+                        <h3 class="text-lg font-bold text-gray-800">Unpatched Systems &amp; Unmanaged Vulnerabilities</h3>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-yellow-500 text-2xl font-bold">61%</div>
+                        <div class="text-xs text-gray-500">of breached orgs</div>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 mb-2 font-medium">PCI DSS Req 6 &amp; 11: Vulnerability Management &amp; Security Testing</div>
+                <p class="text-gray-700 text-sm leading-relaxed mb-2">
+                    Failure to apply security patches, run quarterly external scans, and remediate critical CVEs
+                    within SLAs. A SecurityMetrics study confirmed every weak point exploited in PCI breaches was
+                    explicitly addressed by PCI DSS. Legacy Windows Server and EOL CentOS 7 environments are
+                    disproportionately affected.
+                </p>
+                <p class="text-sm text-gray-500">
+                    <strong>Notable breaches:</strong> Equifax (147M records, $425M settlement -> unpatched Apache Struts) ·
+                    Adobe (3M card records -> unpatched ColdFusion CVE)
+                </p>
+            </div>
+
+            <!-- Failure 3 -->
+            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                <div class="flex items-start justify-between gap-4 mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-blue-500 text-2xl font-bold">#3</span>
+                        <h3 class="text-lg font-bold text-gray-800">Improper Network Segmentation &amp; Firewall Misconfiguration</h3>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-blue-500 text-2xl font-bold">57%</div>
+                        <div class="text-xs text-gray-500">of breached orgs</div>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 mb-2 font-medium">PCI DSS Req 1 &amp; 2: Network Security Controls</div>
+                <p class="text-gray-700 text-sm leading-relaxed mb-2">
+                    Organizations frequently fail to isolate the CDE from other network segments. Misconfigured
+                    firewall rules RDP or SSH open to the internet, no default-deny outbound, flat network topology
+                    allow attackers to pivot directly into cardholder data systems from a less-secure zone.
+                </p>
+                <p class="text-sm text-gray-500">
+                    <strong>Notable breaches:</strong> Heartland Payment Systems (175,000 merchants affected) ·
+                    TJX Companies (94M accounts, $40.9M fine -> flat WiFi network)
+                </p>
+            </div>
+
+            <!-- Failure 4 -->
+            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                <div class="flex items-start justify-between gap-4 mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-purple-500 text-2xl font-bold">#4</span>
+                        <h3 class="text-lg font-bold text-gray-800">Insufficient Logging, Monitoring &amp; Incident Response</h3>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-purple-500 text-2xl font-bold">54%</div>
+                        <div class="text-xs text-gray-500">of breached orgs</div>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 mb-2 font-medium">PCI DSS Req 10 &amp; 12: Audit Logs, SIEM &amp; Incident Response</div>
+                <p class="text-gray-700 text-sm leading-relaxed mb-2">
+                    Organizations lacking SIEM deployment, 365-day log retention, File Integrity Monitoring, and a
+                    documented daily review process fail to detect breaches in progress. Verizon forensics has never
+                    found a breached organization fully PCI compliant at the time of breach.
+                </p>
+                <p class="text-sm text-gray-500">
+                    <strong>Notable breaches:</strong> Target (active malware alerts for 3 weeks before detection) ·
+                    Marriott (breach undetected for 4 years -> 500M guest records)
+                </p>
+            </div>
+
+            <!-- Failure 5 -->
+            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                <div class="flex items-start justify-between gap-4 mb-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-green-500 text-2xl font-bold">#5</span>
+                        <h3 class="text-lg font-bold text-gray-800">Storing &amp; Mishandling Sensitive Authentication Data (SAD)</h3>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-green-500 text-2xl font-bold">49%</div>
+                        <div class="text-xs text-gray-500">of breached orgs</div>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 mb-2 font-medium">PCI DSS Req 3 &amp; 4: Cardholder Data Protection &amp; Encryption</div>
+                <p class="text-gray-700 text-sm leading-relaxed mb-2">
+                    Many organizations unknowingly store full magnetic stripe data, CVV codes, or PINs
+                    post-authorization a direct PCI violation. PAN transmission without TLS and lack of
+                    tokenization are frequently cited. Card data is often discovered in unexpected places: logs,
+                    emails, and unencrypted databases.
+                </p>
+                <p class="text-sm text-gray-500">
+                    <strong>Notable breaches:</strong> Wawa (30M cards -> stored full track data) ·
+                    Sonic Drive-In (5M cards -> POS memory scraping of unencrypted PANs)
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Methodology & Frameworks -->
+    <div class="card p-6 mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Methodology &amp; Frameworks</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-center flex-col">
+                <div class="text-2xl text-blue-600 font-bold">PCI DSS v4.0.1</div>
+                <p class="text-sm text-gray-600 text-center mt-2">Primary compliance framework. All findings mapped to PCI SSC v4.0.1 control requirements.</p>
+            </div>
+            <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-center flex-col">
+                <div class="text-2xl text-blue-600 font-bold">MITRE ATT&amp;CK</div>
+                <p class="text-sm text-gray-600 text-center mt-2">Control gaps mapped to adversary TTPs missing MFA maps to T1078, open RDP to T1021.001.</p>
+            </div>
+            <div class="bg-gray-100 p-4 rounded-lg flex items-center justify-center flex-col">
+                <div class="text-2xl text-blue-600 font-bold">NIST 800-53</div>
+                <p class="text-sm text-gray-600 text-center mt-2">Remediation guidance cross-referenced with NIST 800-53 Rev 5 AC-17, SI-2, AU-11.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 5 Requirements Table -->
+    <div class="card p-6 mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Top 5 PCI DSS v4.0.1 Requirements All Industries Must Follow</h2>
+        <p class="text-gray-600 text-sm mb-6 leading-relaxed">
+            PCI DSS v4.0.1 became the sole active standard on January 1, 2025. All 64 new requirements are
+            mandatory as of March 31, 2025. These five have the broadest impact across every industry and
+            size of organization.
+        </p>
+
+        <div class="overflow-x-auto rounded-lg border border-gray-200">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:80px;">Req</th>
+                        <th>Requirement</th>
+                        <th style="width:220px;">What Changed in v4.0</th>
+                        <th style="width:100px;">Type</th>
+                        <th style="width:110px;">Deadline</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="font-mono text-xs font-semibold text-gray-700">8.3.1<br>8.4.2</div>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-gray-800 mb-1">MFA for All CDE Access</div>
+                            <div class="text-xs text-gray-600 leading-relaxed">
+                                Multi-factor authentication is now mandatory for <em>all</em> access into the CDE
+                                not just admin or remote users. Passwords used as a factor must be at least
+                                12 characters (up from 7). Hardware phishing-resistant authenticators are
+                                explicitly recognized as a compliant option.
+                            </div>
+                        </td>
+                        <td class="text-xs text-gray-600 leading-relaxed">
+                            v3.2.1 required MFA only for remote access. v4.0 expands to <em>all</em> CDE access.
+                            Password minimum raised from 7 → 12 characters.
+                        </td>
+                        <td>
+                            <span class="tag" style="background:#fee2e2;color:#b91c1c;">CRITICAL</span><br><br>
+                            <span class="tag" style="background:#dcfce7;color:#166534;">EXPANDED</span>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-red-600 text-xs">Mar 31, 2025</div>
+                            <div class="text-xs text-gray-500">MANDATORY</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="font-mono text-xs font-semibold text-gray-700">6.4.3<br>11.6.1</div>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-gray-800 mb-1">Payment Page Script Integrity (Anti-Skimming)</div>
+                            <div class="text-xs text-gray-600 leading-relaxed">
+                                All scripts on payment pages must be inventoried, authorized, and monitored for
+                                unauthorized changes. Organizations must be alerted when any script is added or
+                                modified. Directly addresses Magecart / web-skimming attacks on checkout pages.
+                            </div>
+                        </td>
+                        <td class="text-xs text-gray-600 leading-relaxed">
+                            Brand new in v4.0. Requires Subresource Integrity (SRI) or equivalent
+                            change-detection. Applies to all merchants with a payment page.
+                        </td>
+                        <td>
+                            <span class="tag" style="background:#dbeafe;color:#1d4ed8;">NEW</span><br><br>
+                            <span class="tag" style="background:#fef9c3;color:#854d0e;">ALL ORGS</span>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-red-600 text-xs">Mar 31, 2025</div>
+                            <div class="text-xs text-gray-500">MANDATORY</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="font-mono text-xs font-semibold text-gray-700">3.3.1<br>3.5.1</div>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-gray-800 mb-1">No SAD Retention &amp; Encrypted PAN Storage</div>
+                            <div class="text-xs text-gray-600 leading-relaxed">
+                                Sensitive Authentication Data must not be stored after authorization under any
+                                circumstance. PANs must be rendered unreadable using keyed cryptographic hashes
+                                or truncation. Disk-level encryption alone is no longer sufficient.
+                            </div>
+                        </td>
+                        <td class="text-xs text-gray-600 leading-relaxed">
+                            v4.0 clarifies disk encryption must be combined with hashing or truncation.
+                            Simple SHA-256 without a secret key is no longer compliant.
+                        </td>
+                        <td>
+                            <span class="tag" style="background:#fee2e2;color:#b91c1c;">CRITICAL</span><br><br>
+                            <span class="tag" style="background:#dbeafe;color:#1d4ed8;">UPDATED</span>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-red-600 text-xs">Mar 31, 2025</div>
+                            <div class="text-xs text-gray-500">MANDATORY</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="font-mono text-xs font-semibold text-gray-700">10.7.1<br>10.3.2</div>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-gray-800 mb-1">12-Month Log Retention &amp; Log Integrity (FIM)</div>
+                            <div class="text-xs text-gray-600 leading-relaxed">
+                                Audit logs must be retained for 12 months minimum, with the most recent 3 months
+                                immediately accessible. Log files must be protected from tampering using FIM.
+                                Daily critical event review must be documented with timestamps.
+                            </div>
+                        </td>
+                        <td class="text-xs text-gray-600 leading-relaxed">
+                            Retention formalized at 12 months (implied but not explicit in v3.2.1). FIM on
+                            log directories is now a distinct auditable sub-requirement.
+                        </td>
+                        <td>
+                            <span class="tag" style="background:#fef9c3;color:#854d0e;">ALL ORGS</span><br><br>
+                            <span class="tag" style="background:#dbeafe;color:#1d4ed8;">UPDATED</span>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-red-600 text-xs">Mar 31, 2025</div>
+                            <div class="text-xs text-gray-500">MANDATORY</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="font-mono text-xs font-semibold text-gray-700">12.3.1<br>12.3.2</div>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-gray-800 mb-1">Annual Scope Review &amp; Targeted Risk Analysis (TRA)</div>
+                            <div class="text-xs text-gray-600 leading-relaxed">
+                                Organizations must formally confirm PCI DSS scope annually (every 6 months for
+                                service providers) and document the results. All controls with a flexible
+                                frequency must be supported by a documented Targeted Risk Analysis. Replaces
+                                the "best judgment" approach of v3.2.1.
+                            </div>
+                        </td>
+                        <td class="text-xs text-gray-600 leading-relaxed">
+                            Entirely new concept in v4.0. Organizations can no longer adopt default
+                            frequencies without documented risk justification.
+                        </td>
+                        <td>
+                            <span class="tag" style="background:#dcfce7;color:#166534;">NEW</span><br><br>
+                            <span class="tag" style="background:#fef9c3;color:#854d0e;">ALL ORGS</span>
+                        </td>
+                        <td>
+                            <div class="font-semibold text-red-600 text-xs">Mar 31, 2025</div>
+                            <div class="text-xs text-gray-500">MANDATORY</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Remediation Roadmap -->
+    <div class="card p-6 mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Remediation Roadmap</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gray-100 p-4 rounded-lg shadow">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Short-Term (0–30 Days)</h4>
+                <ul class="list-disc list-inside text-gray-600 space-y-1 text-sm">
+                    <li>Enforce MFA for all remote access into the CDE (Req 8.4.3).</li>
+                    <li>Patch all critical CVEs across scoped systems.</li>
+                    <li>Restrict RDP (3389) to VPN gateway IPs only.</li>
+                    <li>Run overdue external vulnerability scan.</li>
+                </ul>
+            </div>
+            <div class="bg-gray-100 p-4 rounded-lg shadow">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Medium-Term (30–90 Days)</h4>
+                <ul class="list-disc list-inside text-gray-600 space-y-1 text-sm">
+                    <li>Extend log retention to 365 days in SIEM.</li>
+                    <li>Deploy FIM (OSSEC/Wazuh) on all log directories.</li>
+                    <li>Update password policy to 12-character minimum.</li>
+                    <li>Eliminate all shared/generic accounts.</li>
+                </ul>
+            </div>
+            <div class="bg-gray-100 p-4 rounded-lg shadow">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Long-Term (90–180 Days)</h4>
+                <ul class="list-disc list-inside text-gray-600 space-y-1 text-sm">
+                    <li>Implement default-deny outbound firewall policy.</li>
+                    <li>Complete Targeted Risk Analysis for all controls.</li>
+                    <li>Conduct formal annual PCI DSS scope review (SAQ-D).</li>
+                    <li>Deliver mandatory security awareness training.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /container -->
+
+<script>
+    // ── Chart 1: Horizontal bar — % of breached orgs per failure ──
+    new Chart(document.getElementById('failureChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Access Controls', 'Unpatched Systems', 'Network Segmentation', 'Logging & Monitoring', 'Data Storage (SAD)'],
+            datasets: [{
+                label: '% of Breached Orgs',
+                data: [68, 61, 57, 54, 49],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(34, 197, 94, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(139, 92, 246, 1)',
+                    'rgba(34, 197, 94, 1)'
+                ],
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.raw}% of breached organizations` } }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 80,
+                    ticks: { callback: v => v + '%' },
+                    grid: { color: '#f3f4f6' }
+                },
+                y: { grid: { display: false } }
+            }
+        }
+    });
+
+    // ── Chart 2: Doughnut — industry non-compliance ──
+    new Chart(document.getElementById('industryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Retail (78%)', 'Hospitality (73%)', 'Food & Bev (69%)', 'Healthcare (65%)', 'Travel (61%)', 'Financial (48%)'],
+            datasets: [{
+                data: [78, 73, 69, 65, 61, 48],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(234, 179, 8, 0.8)',
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(245, 158, 11, 0.6)',
+                    'rgba(59, 130, 246, 0.8)'
+                ],
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '55%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, padding: 8, font: { size: 11 } }
+                }
+            }
+        }
+    });
+
+    // ── Chart 3: Line — compliance rate trend ──
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: ['2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025*'],
+            datasets: [
+                {
+                    label: 'Full Compliance Rate (%)',
+                    data: [55.4, 52.5, 47.1, 43.7, 36.9, 35.1, 32.4, 29.8, 27.9, null],
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                    pointRadius: 4
+                },
+                {
+                    label: 'Projected (post v4.0.1)',
+                    data: [null, null, null, null, null, null, null, null, 27.9, 22.0],
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { boxWidth: 12, font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%` } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 10,
+                    max: 65,
+                    ticks: { callback: v => v + '%' },
+                    grid: { color: '#f3f4f6' }
+                },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+</body>
+</html>
